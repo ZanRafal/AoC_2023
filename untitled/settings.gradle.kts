@@ -23,3 +23,15 @@ include("src:main:Day10")
 findProject(":src:main:Day10")?.name = "Day10"
 include("src:main:Day12")
 findProject(":src:main:Day12")?.name = "Day12"
+include("src:main:Day11")
+findProject(":src:main:Day11")?.name = "Day11"
+include("src:main:Day15")
+findProject(":src:main:Day15")?.name = "Day15"
+include("src:main:Day16")
+findProject(":src:main:Day16")?.name = "Day16"
+include("src:main:Day17")
+findProject(":src:main:Day17")?.name = "Day17"
+include("src:main:Day18")
+findProject(":src:main:Day18")?.name = "Day18"
+include("src:main:Day19")
+findProject(":src:main:Day19")?.name = "Day19"

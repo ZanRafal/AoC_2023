@@ -6,34 +6,6 @@ import java.util.*;
 
 public class Main {
     private static final String file = "input";
-
-    private static final Map<Character, List<int[]>> PIPE_CONNECTIONS = new HashMap<>() {{
-        put('|', Arrays.asList(new int[]{0, 1}, new int[]{0, -1})); // vertical pipe connects north and south
-        put('-', Arrays.asList(new int[]{1, 0}, new int[]{-1, 0})); // horizontal pipe connects east and west
-        put('L', Arrays.asList(new int[]{0, -1}, new int[]{-1, 0})); // 90-degree bend connects north and east
-        put('J', Arrays.asList(new int[]{0, -1}, new int[]{1, 0})); // 90-degree bend connects north and west
-        put('7', Arrays.asList(new int[]{0, 1}, new int[]{1, 0})); // 90-degree bend connects south and west
-        put('F', Arrays.asList(new int[]{0, 1}, new int[]{-1, 0})); // 90-degree bend connects south and east
-        put('S', Arrays.asList(new int[]{0, 1}, new int[]{0, -1}, new int[]{0, 1}, new int[]{0, -1})); // start point
-    }};
-
-    private static final Map<Character, List<int[]>> OUTGOING_CONNECTIONS = new HashMap<>() {{
-        put('|', Arrays.asList(new int[]{0, 1}, new int[]{0, -1})); // vertical pipe connects north and south
-        put('-', Arrays.asList(new int[]{1, 0}, new int[]{-1, 0})); // horizontal pipe connects east and west
-        put('L', Arrays.asList(new int[]{0, 1}, new int[]{1, 0})); // 90-degree bend connects north and east
-        put('J', Arrays.asList(new int[]{0, 1}, new int[]{-1, 0})); // 90-degree bend connects north and west
-        put('7', Arrays.asList(new int[]{0, -1}, new int[]{-1, 0})); // 90-degree bend connects south and west
-        put('F', Arrays.asList(new int[]{0, -1}, new int[]{1, 0})); // 90-degree bend connects south and east
-        put('S', Arrays.asList(new int[]{0, 1}, new int[]{0, -1}, new int[]{0, 1}, new int[]{0, -1})); // start point
-    }};
-
-//    private static final int[][] DIRECTIONS = {
-//            {0, 1}, // up
-//            {1, 0}, // right
-//            {0, -1}, // down
-//            {-1, 0},// left
-//    };
-
     private static final Direction[] DIRECTIONS = {
             Direction.UP,
             Direction.RIGHT,
@@ -54,8 +26,11 @@ public class Main {
         boolean[][] visited = new boolean[map.length][map[0].length];
         Queue<int[]> queue = new LinkedList<>();
 
+        List<Point> vertices = new ArrayList<>();
+
         queue.add(new int[]{startingPoint.getX(), startingPoint.getY(), 0});
         visited[startingPoint.getY()][startingPoint.getX()] = true;
+        vertices.add(startingPoint);
 
         while (!queue.isEmpty()) {
             int[] cell = queue.poll();
@@ -72,12 +47,21 @@ public class Main {
                         && !visited[row][column]
                         && canConnect(point.getValue().charAt(0), map[row][column], direction)
                 ) {
+                    if(map[row][column] == 'J'
+                            || map[row][column] == 'L'
+                            || map[row][column] == '7'
+                            || map[row][column] == 'F'
+                    ) {
+                        vertices.add(new Point(column, row, String.valueOf(map[row][column])));
+                    }
                     queue.add(new int[]{column, row, cell[2] + 1});
                     visited[row][column] = true;
                 }
             }
 
         }
+
+//        vertices = sortVertices(vertices);
 
         for(int i = 0; i < visited.length; i++) {
             for(int j = 0; j < visited[i].length; j++) {
@@ -90,7 +74,158 @@ public class Main {
             System.out.println();
         }
 
+//        double part2 = calculatePart2(vertices, distance * 2);
+
+//        4288 -- to much
+//        System.out.println(part2);
         return distance;
+    }
+
+    private static List<Point> sortVertices(List<Point> vertices) {
+        System.out.println(vertices + " unsorted");
+        var startPoint = vertices.get(0);
+        vertices.remove(startPoint);
+        List<Point> sorted = new ArrayList<>();
+        sorted.add(startPoint);
+
+        List<Point> unprocessed = new ArrayList<>();
+
+        var nextPoint = vertices.get(0);
+        Set<Point> processed = new HashSet<>();
+        processed.add(startPoint);
+
+        for (Point point : vertices) {
+            var currentPoint = getNextPoint(nextPoint, point);
+            if(currentPoint.equals(nextPoint) && !processed.contains(currentPoint)) {
+                sorted.add(currentPoint);
+                processed.add(currentPoint);
+            } else if (!currentPoint.equals(nextPoint)) {
+                sorted.add(currentPoint);
+                processed.add(currentPoint);
+                nextPoint = currentPoint;
+            }
+        }
+
+        System.out.println(sorted);
+        return sorted;
+    }
+
+    private static Point getNextPoint(Point first, Point second) {
+        if(first.getX() != second.getX() && first.getY() != second.getY()) {
+            return first;
+        }
+
+        return switch (first.getValue()) {
+            case "L" -> switch (second.getValue()) {
+                case "J" -> (first.getY() == second.getY() && first.getX() < second.getX()) ? first : second;
+                case "7" -> (first.getY() > second.getY() && first.getX() == second.getX() || first.getX() < second.getX() && first.getY() == second.getY()) ? first : second;
+                case "F" -> (first.getY() < second.getY() && first.getX() == second.getX()) ? first : second;
+                case "L" -> first;
+                default -> throw new IllegalStateException("Unexpected value: " + second.getValue());
+            };
+            case "J" -> switch (second.getValue()) {
+                case "L" -> (first.getX() > second.getX() && first.getY() == second.getY()) ? second : first;
+                case "F" -> ((first.getX() == second.getX() && first.getY() > second.getY()) || (first.getX() > second.getX() && first.getY() == second.getY())) ? second : first;
+                case "7" -> (first.getX() == second.getX() && first.getY() > second.getY()) ? second : first;
+                case "J" -> first;
+                default -> throw new IllegalStateException("Unexpected value: " + second.getValue());
+            };
+            case "7" -> switch (second.getValue()) {
+                case "L" -> ((first.getX() == second.getX() && first.getY() < second.getY()) || (first.getX() > second.getX() && first.getY() == second.getY())) ? second : first;
+                case "J" -> (first.getX() == second.getX() && first.getY() < second.getY()) ? second : first;
+                case "F" -> (first.getX() > second.getX() && first.getY() == second.getY()) ? second : first;
+                case "7" -> first;
+                default -> throw new IllegalStateException("Unexpected value: " + second.getValue());
+            };
+            case "F" -> switch (second.getValue()) {
+                case "L" -> (first.getY() < second.getY() && first.getX() == second.getX()) ? second : first;
+                case "J" -> ((first.getY() < second.getY() && first.getX() == second.getX()) || (first.getX() < second.getX() && first.getY() == second.getY())) ? second : first;
+                case "7" -> (first.getX() < second.getX() && first.getY() == second.getY()) ? second : first;
+                case "F" -> first;
+                default -> throw new IllegalStateException("Unexpected value: " + second.getValue());
+            };
+            default -> throw new IllegalStateException("Unexpected value: " + first.getValue());
+        };
+    }
+
+    private static boolean isNextPoint(char c, char c1, Direction direction) {
+        return switch (c) {
+            case 'L' -> switch (direction) {
+                case UP -> c1 == '7' || c1 == 'F';
+                case RIGHT -> c1 == 'J' || c1 == '7';
+                case DOWN, LEFT -> false;
+            };
+            case 'J' -> switch (direction) {
+                case UP -> c1 == '7' || c1 == 'F';
+                case RIGHT, DOWN -> false;
+                case LEFT -> c1 == 'L' || c1 == 'F';
+            };
+            case '7' -> switch (direction) {
+                case UP, RIGHT -> false;
+                case DOWN -> c1 == 'L' || c1 == 'J';
+                case LEFT -> c1 == 'L' || c1 == 'F';
+            };
+            case 'F' -> switch (direction) {
+                case DOWN -> c1 == 'L' || c1 == 'J';
+                case UP, LEFT -> false;
+                case RIGHT -> c1 == 'J' || c1 == '7';
+            };
+            default -> false;
+        };
+    }
+
+    static double calculatePart2(List<Point> visited, int circ) {
+//        List<Point> vertices = findVertices(visited);
+        return calculatePointsInside(visited) - ((double) circ / 2) + 1;
+    }
+
+    static int calculatePointsInside(List<Point> vertices) {
+        double area = 0.0;
+        for(int i = 0; i < vertices.size() - 1; i++) {
+//            var nextIndex = (i + 1) % vertices.size();
+            area += (vertices.get(i + 1).getX() + vertices.get(i).getX()) * (vertices.get(i +    1).getY() - vertices.get(i).getY());
+//            area += (vertices.get(nextIndex).getY() + vertices.get(i).getX()) - (vertices.get(nextIndex).getX() - vertices.get(i).getY());
+        }
+
+        return (int) Math.abs(area / 2.0);
+    }
+
+    static Direction getDirection(Direction direction, char pipe) {
+
+        switch (pipe) {
+            case 'L' -> {
+                switch (direction) {
+                    case DOWN -> direction = Direction.RIGHT;
+                    case LEFT -> direction = Direction.UP;
+                }
+            }
+            case 'J' -> {
+                switch (direction) {
+                    case RIGHT -> direction = Direction.UP;
+                    case DOWN -> direction = Direction.LEFT;
+                }
+            }
+            case '7' -> {
+                switch (direction) {
+                    case UP -> direction = Direction.LEFT;
+                    case RIGHT -> direction = Direction.DOWN;
+                }
+            }
+            case 'F' -> {
+                switch (direction) {
+                    case UP -> direction = Direction.RIGHT;
+                    case LEFT -> direction = Direction.DOWN;
+                }
+            }
+        }
+        return direction;
+    }
+
+    static List<Point> findVertices(List<Point> visited) {
+        return visited.stream()
+                .filter(point -> !point.getValue().equals("|")
+                        && !point.getValue().equals("-"))
+                .toList();
     }
 
     public static boolean canConnect(char currentPipe, char nextPipe, Direction direction) {
@@ -168,7 +303,7 @@ public class Main {
 
     static List<String> readFile() throws Exception{
         return Files.readAllLines(
-                Paths.get("C:\\Users\\viome\\Desktop\\JavaThings\\AoC_2023\\untitled\\src\\main\\Day10\\src\\main\\java\\org\\example\\" + file + ".txt")
+                Paths.get("untitled/src/main/Day10/src/main/java/org/example/" + file + ".txt")
         );
     }
 }

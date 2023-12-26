@@ -9,7 +9,6 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         Map<String, Integer[]> input = parseInput();
-//        System.out.println(input);
         calculatePossibleOptions(input);
 
     }
@@ -26,7 +25,8 @@ public class Main {
     }
 
     private static int calculateOptions(String[] groups, Integer[] value) {
-
+        System.out.println(Arrays.toString(groups));
+        System.out.println(Arrays.toString(value));
         return 0;
     }
 
@@ -45,7 +45,7 @@ public class Main {
 
     static List<String> readFile() throws Exception{
         return Files.readAllLines(
-                Paths.get("C:\\Users\\viome\\Desktop\\JavaThings\\AoC_2023\\untitled\\src\\main\\Day12\\src\\main\\java\\org\\example\\" + file + ".txt")
+                Paths.get("untitled/src/main/Day12/src/main/java/org/example/" + file + ".txt")
         );
     }
 
